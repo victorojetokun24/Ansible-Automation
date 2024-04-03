@@ -1,0 +1,107 @@
+---
+- name: Deploy web application
+  hosts: all
+  become: yes
+  vars:
+    apache_service_name_centos: "httpd"
+    apache_service_name_ubuntu: "apache2"
+    apache_document_root: "/var/www/html"
+    github_repo_url: "https://github.com/victorojetokun24/ansible-apache-node"
+
+  tasks:
+    - name: Update package cache (Ubuntu)
+      apt:
+        update_cache: yes
+      when: ansible_distribution == 'Ubuntu'
+
+    - name: Update packages (Ubuntu)
+      apt:
+        upgrade: yes
+        autoremove: yes
+      when: ansible_distribution == 'Ubuntu'
+
+    - name: Update package cache (CentOS)
+      yum:
+        update_cache: yes
+      when: ansible_distribution == 'CentOS'
+
+    - name: Update packages (CentOS)
+      yum:
+        name: "*"
+        state: present
+      when: ansible_distribution == 'CentOS'
+
+    - name: Install Git (Ubuntu)
+      apt:
+        name: git
+        state: present
+      when: ansible_distribution == 'Ubuntu'
+
+    - name: Install Git (CentOS)
+      yum:
+        name: git
+        state: present
+      when: ansible_distribution == 'CentOS'
+
+    - name: Install Apache2 (Ubuntu)
+      apt:
+        name: apache2
+        state: present
+      when: ansible_distribution == 'Ubuntu'
+
+    - name: Install Apache2 (CentOS)
+      yum:
+        name: httpd
+        state: present
+      when: ansible_distribution == 'CentOS'
+
+    - name: Clone GitHub repository
+      git:
+        repo: "https://github.com/victorojetokun24/ansible-apache-node"
+        dest: "/home/vagrant/web"
+      become: yes
+
+    - name: Copy web application to Apache document root (Ubuntu)
+      copy:
+        src: "/home/vagrant/web/"
+        dest: "/var/www/html"
+        remote_src: yes
+        force: yes
+      when: ansible_distribution == 'Ubuntu'
+
+    - name: Copy web application to Apache document root (CentOS)
+      copy:
+        src: "/home/vagrant/web/"
+        dest: "/var/www/html"
+        remote_src: yes
+        force: yes
+      when: ansible_distribution == 'CentOS'
+
+    - name: Ensure correct ownership and permissions (Ubuntu)
+      file:
+        path: "/var/www/html"
+        owner: www-data
+        group: www-data
+        mode: "0755"
+      when: ansible_distribution == 'Ubuntu'
+
+    - name: Ensure correct ownership and permissions (CentOS)
+      file:
+        path: "/var/www/html"
+        owner: apache
+        group: apache
+        mode: "0755"
+      when: ansible_distribution == 'CentOS'
+
+    - name: Restart Apache2 service (Ubuntu)
+      service:
+        name: apache2
+        state: restarted
+      when: ansible_distribution == 'Ubuntu'
+
+    - name: Restart httpd service (CentOS)
+      service:
+        name: httpd
+        state: restarted
+      when: ansible_distribution == 'CentOS'
+
